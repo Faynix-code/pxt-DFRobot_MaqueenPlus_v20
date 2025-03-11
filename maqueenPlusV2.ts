@@ -246,7 +246,7 @@ namespace maqueenPlusV2 {
             pins.digitalWritePin(DigitalPin.P8, state ? 1 : 0);
         }
     }
-}
+
 
     export function controlMotor(emotor:MyEnumMotor, edir:MyEnumDir, speed:number):void{
         switch(emotor){
