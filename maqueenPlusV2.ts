@@ -1,3 +1,17 @@
+// Ajouter une option Bluetooth-friendly
+let bluetoothEnabled = false;
+
+/**
+ * Activer/Désactiver la compatibilité Bluetooth
+ */
+//% blockId=set_bluetooth_mode block="Activer Bluetooth %enable"
+//% weight=90
+export function setBluetoothMode(enable: boolean): void {
+    bluetoothEnabled = enable;
+    if (enable) {
+        bluetooth.startUartService();
+    }
+}
 
 const enum PatrolSpeed {
     //% block="1"
@@ -151,6 +165,8 @@ namespace maqueenPlusV2 {
     //%block="initialize via I2C until success"
     export function I2CInit(): void {
         let Version_v = 0;
+// Initialize Bluetooth
+        bluetooth.startUartService();
         //V3 systemReset
         let allBuffer = pins.createBuffer(2);
         allBuffer[0] = 0x49;
@@ -194,6 +210,44 @@ namespace maqueenPlusV2 {
     //% block="set %emotor direction %edir speed %speed"
     //% speed.min=0 speed.max=255
     //% weight=99
+    export function moveMotor(motor: MyEnumMotor, speed: number, direction: MyEnumDir): void {
+        if (bluetoothEnabled) {
+            bluetooth.uartWriteString(`Moteur: ${motor}, Vitesse: ${speed}, Direction: ${direction}`);
+        } else {
+            let pin = motor === MyEnumMotor.LeftMotor ? DigitalPin.P13 : DigitalPin.P14;
+            let dirPin = motor === MyEnumMotor.LeftMotor ? DigitalPin.P15 : DigitalPin.P16;
+            pins.digitalWritePin(dirPin, direction === MyEnumDir.Forward ? 1 : 0);
+            pins.analogWritePin(pin, speed);
+        }
+    }
+    
+    export function stopMotor(motor: MyEnumMotor): void {
+        if (bluetoothEnabled) {
+            bluetooth.uartWriteString(`Arrêt du moteur ${motor}`);
+        } else {
+            let pin = motor === MyEnumMotor.LeftMotor ? DigitalPin.P13 : DigitalPin.P14;
+            pins.analogWritePin(pin, 0);
+        }
+    }
+    
+    export function readSensor(sensorPin: DigitalPin): number {
+        if (bluetoothEnabled) {
+            bluetooth.uartWriteString(`Lecture du capteur sur ${sensorPin}`);
+            return 0; // Valeur fictive en mode Bluetooth
+        } else {
+            return pins.digitalReadPin(sensorPin);
+        }
+    }
+    
+    export function setLedState(state: boolean): void {
+        if (bluetoothEnabled) {
+            bluetooth.uartWriteString(`LED: ${state ? "ON" : "OFF"}`);
+        } else {
+            pins.digitalWritePin(DigitalPin.P8, state ? 1 : 0);
+        }
+    }
+}
+
     export function controlMotor(emotor:MyEnumMotor, edir:MyEnumDir, speed:number):void{
         switch(emotor){
             case MyEnumMotor.LeftMotor:
